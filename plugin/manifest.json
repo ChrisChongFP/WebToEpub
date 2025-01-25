@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "WebToEpub",
+  "version": "1.0.1.26",
+  "default_locale": "en",
+  "icons": {
+    "128": "book128.png"
+  },
+  "permissions": [
+    "cookies",
+    "downloads",
+    "webRequest",
+    "webRequestBlocking",
+    "scripting",
+    "storage",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "browser_style": false,
+    "default_title": "",
+    "default_icon": "book128.png",
+    "default_popup": "popup.html"
+  },
+  "incognito": "split",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "WebToEpub@Baka-tsuki.org",
+      "strict_min_version": "115.0"
+    }
+  },
+  "minimum_chrome_version": "120",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxXC7/v78BlvB9zeJ5sYVEXBfEXTIwIeVde/RWxRFLHdE6YRVdIkmeqd13ArqnFzu6USNiJswCZzmeNY98lNVmA88GqD5YoNdtGT9yW/7be+ld2EHUBEawnGY7JiLO9DP+q2ka2ihQHojUF8B069upvMKY9W1IWjWBW7qTxea5i2l6YTRU9a3IuISjn5eUBNo0F55fimc8GK/u9NInwGb9ygvzHVT02gaqo2D0Ey4NOnDvMltFxfRGMUi5OSpt2u0fSmqeaRevIhqdAoKaY02WKELM445bGlPj2/SbIclDbdcq9eEUxdaJmgLeYXZz17lzN0Ul0+OMPsEAs7CGcXcIwIDAQAB"
+}
