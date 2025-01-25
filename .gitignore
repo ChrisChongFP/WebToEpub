@@ -1,0 +1,9 @@
+eslint/*.xpi
+eslint/*.zip
+eslint/packed.js
+eslint/index.csv
+node_modules
+plugin/jszip/dist/jszip.min.js
+.idea
+browsers/
+.DS_Store

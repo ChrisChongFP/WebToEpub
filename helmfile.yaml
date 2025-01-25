@@ -1,0 +1,9 @@
+releases:
+  - name: web-to-epub
+    chart: ./charts/web-to-epub
+    version: 0.1.0
+    set:
+      - name: podLabels.commit
+        value: {{ exec "git" (list "rev-parse" "--short" "HEAD") | trim }}
+      - name: image.tag
+        value: {{ exec "git" (list "rev-parse" "--short" "HEAD") | trim }}
