@@ -36,6 +36,7 @@ class ParserState {
     }
 
     setPagesToFetch(urls) {
+        console.log("entering setPagesToFetch")
         let nextPrevChapters = new Set();
         this.webPages = new Map();
         for(let i = 0; i < urls.length; ++i) {
@@ -48,6 +49,7 @@ class ParserState {
             nextPrevChapters = new Set();
             nextPrevChapters.add(util.normalizeUrlForCompare(page.sourceUrl));
         }
+        console.log("finsihed pagesToFetch with length of " + this.webPages.size);
     }
 }
 
@@ -387,16 +389,35 @@ class Parser {
         this.state.chapterListUrl = url;
         let chapterUrlsUI = new ChapterUrlsUI(this);
         this.userPreferences.setReadingListCheckbox(url);
-
+        let shouldEnd = false;
         // returns promise, because may need to fetch additional pages to find list of chapters
         await that.getChapterUrls(firstPageDom, chapterUrlsUI).then(function (chapters) {
             if (that.userPreferences.chaptersPageInChapterList.value) {
                 chapters = that.addFirstPageUrlToWebPages(url, firstPageDom, chapters);
             }
             chapters = that.cleanWebPageUrls(chapters);
+            console.log("chapter len after cleanWebPageUrls " + chapters.length);
+            const initialCount = chapters.length;
             that.userPreferences.readingList.deselectOldChapters(url, chapters);
             chapterUrlsUI.populateChapterUrlsTable(chapters);
-            if (0 < chapters.length) {
+            chapters = chapters.filter(c => !c.shouldSkip);
+            console.log("chapter len after populateChapterUrls " + chapters.length);
+            // Whether or not we are doing an update check, signal there are no chapters available.
+            if (chapters.length === 0) {
+                window.signalNoUpdate();
+                shouldEnd = true;
+                return;
+            }
+
+            // See if we are just doing a 'is there an update' or a request to download
+            const param = new URLSearchParams(window.location.search);
+            const isUpdateCheck = !param.has("saveAs")
+            if (isUpdateCheck && chapters.length > 0) {
+                window.signalComplete();
+                shouldEnd = true;
+                return;
+            }
+            if (chapters.length > 0) {
                 if (chapters[0].sourceUrl === url) {
                     chapters[0].rawDom = firstPageDom;
                     that.updateLoadState(chapters[0]);
@@ -408,6 +429,7 @@ class Parser {
         }).catch(function (err) {
             ErrorLog.showErrorMessage(err);
         });
+        return shouldEnd;
     }
 
 

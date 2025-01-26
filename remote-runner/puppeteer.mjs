@@ -18,13 +18,22 @@ async function createBrowser() {
     });
 }
 
+const RunResult = Object.freeze({
+    TIMEOUT: Symbol('timeout'),
+    DOWNLOAD: Symbol('manual'),
+    NO_UPDATE: Symbol('no-update'),
+});
+
+
 async function run(browser, url, skipUntilChapter, saveAs) {
     const extensionPage = await browser.newPage();
-    extensionPage.on('console', (msg) => console.log(msg.text()));
+    if (process.env.DEBUG === "true") {
+        extensionPage.on('console', (msg) => console.log(msg.text()));
+    }
 
     let manualTimeoutId;
-    const manualSignalPromise = new Promise((resolve) => {
-        manualTimeoutId = setTimeout(() => resolve('timeout'), AUTO_TIMEOUT);
+    const timeoutPromise = new Promise((resolve) => {
+        manualTimeoutId = setTimeout(() => resolve(RunResult.TIMEOUT), AUTO_TIMEOUT);
     });
 
     // Expose a function to manually signal completion
@@ -32,10 +41,18 @@ async function run(browser, url, skipUntilChapter, saveAs) {
         extensionPage.exposeFunction('signalComplete', async () => {
             console.log('Closed manually\n');
             clearTimeout(manualTimeoutId);
-            await extensionPage.close();
-            resolve('manual');
+            resolve(RunResult.DOWNLOAD);
         });
     });
+
+    const signalNoUpdatePromise = new Promise((resolve) => {
+        extensionPage.exposeFunction('signalNoUpdate', async () => {
+            console.log('Closed manually with no update\n');
+            clearTimeout(manualTimeoutId);
+            resolve(RunResult.NO_UPDATE);
+        });
+    });
+
 
     const maxFetch = process.env.MAX_PAGE_FETCH || "4";
     const skipImages = process.env.SKIP_IMAGES || "true";
@@ -45,27 +62,32 @@ async function run(browser, url, skipUntilChapter, saveAs) {
     // Prepare query parameters for the extension page
     const params = new URLSearchParams({
         url: encodeURIComponent(url),
-        skipUntilChapter: encodeURIComponent(skipUntilChapter),
-        saveAs: encodeURIComponent(saveAs),
         maxFetch: encodeURIComponent(maxFetch),
         skipImages: encodeURIComponent(skipImages),
         manualDelay: encodeURIComponent(manualDelay),
     });
+    if (skipUntilChapter) {
+        params.append('skipUntilChapter', encodeURIComponent(skipUntilChapter));
+    }
+    if (saveAs) {
+        params.append('saveAs', encodeURIComponent(saveAs));
+    }
 
     const encoded = params.toString();
     await extensionPage.goto(`chrome-extension://${EXT_ID}/popup.html?id=123&${encoded}`);
 
     // Wait for either the manual signal or the auto timeout
-    const result = await Promise.race([manualSignalPromise, signalCompletePromise]);
+    const result = await Promise.race([timeoutPromise, signalCompletePromise, signalNoUpdatePromise]);
 
-    if (result === 'timeout') {
+    if (result === RunResult.TIMEOUT) {
         console.log('Had to auto-close extension page');
-        await extensionPage.close();
     }
+    await extensionPage.close();
+    return result;
 }
 
 async function closeBrowser(browser) {
     await browser.close();
 }
 
-export {createBrowser, run, closeBrowser};
+export {createBrowser, run, closeBrowser, RunResult};

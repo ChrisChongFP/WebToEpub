@@ -45,6 +45,11 @@ spec:
               value: "/usr/bin/google-chrome-stable"
             - name: OUTPUT_DIR
               value: "/home/pptruser/Downloads/"
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
