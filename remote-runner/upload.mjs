@@ -1,5 +1,5 @@
 import express from 'express';
-import {createBrowser, run, closeBrowser} from './puppeteer.mjs'; // Adjust path as needed
+import {createBrowser, run, closeBrowser, RunResult} from './puppeteer.mjs'; // Adjust path as needed
 import * as fs from 'fs/promises';
 import * as path from 'node:path';
 
@@ -16,12 +16,39 @@ let browserCtx;
     browserCtx = await createBrowser()
 })();
 
-// Endpoint definition
+// Endpoint for checking if new chapters are available
+app.get('/check', express.json(), async (req, res) => {
+    const {url, skipUntilChapter} = req.query;
+
+    // Validate input
+    if (!url) {
+        return res.status(400).json({error: 'Missing required parameters: url or skipUntilChapter'});
+    }
+
+    try {
+        // Run the BrowserRunner
+        const result = await run(browserCtx, url, skipUntilChapter);
+        if (result === RunResult.TIMEOUT) {
+            return res.status(500).json({error: 'Timeout while running the browser'});
+        }
+        if (result === RunResult.NO_UPDATE) {
+            return res.status(200).json({message: 'No update available', update: false});
+        }
+
+        // New chapters are available
+        res.status(200).json({message: 'New chapters available', update: true});
+    } catch (error) {
+        console.error('Error during BrowserRunner execution:', error);
+        res.status(500).json({error: 'Error running the browser or processing the request'});
+    }
+});
+
+// Endpoint for downloading
 app.post('/run', express.json(), async (req, res) => {
     const {url, skipUntilChapter, id} = req.body;
 
     // Validate input
-    if (!url || !skipUntilChapter || !id) {
+    if (!url || !id) {
         return res.status(400).json({error: 'Missing required parameters: url, skipUntilChapter, or id'});
     }
 
@@ -30,14 +57,19 @@ app.post('/run', express.json(), async (req, res) => {
 
     try {
         // Run the BrowserRunner
-        await run(browserCtx, url, skipUntilChapter, saveAs);
+        const result = await run(browserCtx, url, skipUntilChapter, saveAs);
+        if (result === RunResult.TIMEOUT) {
+            return res.status(500).json({error: 'Timeout while running the browser'});
+        }
+        if (result === RunResult.NO_UPDATE) {
+            return res.status(200).json({message: 'No update available', update:false});
+        }
 
         // Check if the file was created
         const fileExists = await fs.access(outputPath).then(() => true).catch(() => false);
         if (!fileExists) {
             return res.status(500).json({error: 'File not generated or missing'});
         }
-
         // Send the file to the client
         res.sendFile(outputPath, err => {
             if (err) {

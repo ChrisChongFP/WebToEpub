@@ -5,6 +5,12 @@
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
+env:
+  DEBUG: true
+  MAX_PAGE_FETCH: "4"
+  SKIP_IMAGES: "true"
+  MANUAL_DELAY_PER_CHAPTER: "0"
+
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
   repository: us-east1-docker.pkg.dev/server-445819/parkermartin/web-to-epub

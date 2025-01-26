@@ -36,6 +36,7 @@ class ChapterUrlsUI {
         let found = false;
         chapters.forEach(function (chapter) {
             if (skipUntil !== "" && !found) {
+                chapter.shouldSkip = true;
                 if (chapter.sourceUrl.toLowerCase().trim() !== skipUntil) {
                     console.log("skipping " + chapter.sourceUrl);
                     return;
@@ -44,6 +45,7 @@ class ChapterUrlsUI {
                 found = true;
                 return;
             }
+            chapter.shouldSkip = false;
             console.log("adding " + chapter.sourceUrl);
             let row = document.createElement("tr");
             ChapterUrlsUI.appendCheckBoxToRow(row, chapter);

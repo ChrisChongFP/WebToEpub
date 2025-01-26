@@ -44,9 +44,13 @@ var main = (function () {
                 populateMetaInfo(metaInfo);
                 setUiToDefaultState();
                 parser.populateUI(dom);
-                await parser.onLoadFirstPage(url, dom).then( () => {
-                    console.log("trying to load from processInitialHtml")
-                    fetchContentAndPackEpub()
+                await parser.onLoadFirstPage(url, dom).then( (shouldEnd) => {
+                    console.log("onLoadFirstPage returned: " + shouldEnd)
+                    // not all onLoadFirstPage return a result
+                    if (shouldEnd === undefined || shouldEnd === false) {
+                        console.log("trying to load from processInitialHtml")
+                        fetchContentAndPackEpub()
+                    }
                 });
             } catch (error) {
                 ErrorLog.showErrorMessage(error);
